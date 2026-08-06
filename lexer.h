@@ -4,14 +4,14 @@
 #include <iostream>
 #include <vector>
 
-std::vector<std::string> types{"int"};
+extern std::vector<std::string> types;
 
-std::vector<std::string> keyWords{"if", "else", "while", "break", "return", 
-                        "switch", "case", "sizeof"};
+extern std::vector<std::string> keyWords;
 
-std::vector<std::string> ops{"+", "-", "*", "/", "%", "&&", "||",
-                                "=", "==", "!=", "<", "<=", ">", ">="};
+extern std::vector<std::string> ops;
 
-std::vector<std::string> punctSigns = {"{", "}", "[", "]", "(", ")", ";", ",", "\""};
+extern std::vector<std::string> punctSigns;
+
+void f();
 
 #endif
