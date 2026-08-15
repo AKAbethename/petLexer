@@ -7,5 +7,8 @@
 
 
 int main(){
-    f();
+    scan_code("input.c");
+
+    if(isID("_k3")) std::cout << "yeeeeee\n\n";
+
 }

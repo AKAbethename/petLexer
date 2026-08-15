@@ -15,10 +15,10 @@ struct TableNote{
 class Table{
   private:
 //    std::unordered_map<std::string, std::unique_ptr<TableNote>> table; 
-    std::unordered_map<std::string, TableNote*> table;
+    std::unordered_map<std::string, TableNote> table;
 
   public:
-    Table(const std::string&, TableNote*);
+    Table(const std::string&, TableNote);
 };
 
 #endif
