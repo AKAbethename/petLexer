@@ -16,7 +16,7 @@ std::vector<std::string> punctSigns = {"{", "}", "[", "]", "(", ")", ";", ",", "
 
 static int line_num = 1;
 
-static int symb_num = 1;
+static int symb_num = 0;
 
 static int close_single_quotes = 0;
 
@@ -35,10 +35,6 @@ static bool close_circle_bracket = true;
 static std::stack<std::string> brackets;
 
 
-void f(){
-    std::cout << types[0] << "\n";
-}
-
 std::string get_split_line(const std::string& line){
     std::string new_line;
     std::string symbs = "(){}[];,";
@@ -53,15 +49,6 @@ std::string get_split_line(const std::string& line){
             new_line.push_back(line[i]);
     }
     return new_line;
-
-}
-
-int find_cur_symb(std::string& line, char ch, int last_update){
-    int ans = -1;
-    for(int i = last_update; i < line.length(); ++i){
-        if(line[i] == ch) {ans = i; last_update = i+1;}
-    }
-    return ans;
 }
 
 void scan_code(const std::string& file_name){
@@ -69,58 +56,45 @@ void scan_code(const std::string& file_name){
     std::ifstream file(file_name);
     std::string line;
     while(std::getline(file, line)){
-//        std::cout << line << "\n";
         std::string split_line = get_split_line(line);
         handle_line(split_line, line, token_stream); // "line" for finding symb_num 
     }
-
     print_tokens(token_stream);
-
 }
 
 
 bool find_type(const std::string& word){
-    if(std::find(types.begin(), types.end(), word) != types.end()){
-        return true;
-    }
+    if(std::find(types.begin(), types.end(), word) != types.end()) return true;
     return false;
 }
 
 bool find_keyWord(const std::string& word){
-    if(std::find(keyWords.begin(), keyWords.end(), word) != keyWords.end()){
+    if(std::find(keyWords.begin(), keyWords.end(), word) != keyWords.end())
         return true;
-    }
     return false;
 }
 
 bool find_op(const std::string& word){
-    if(std::find(ops.begin(), ops.end(), word) != ops.end()){
-        return true;
-    }
+    if(std::find(ops.begin(), ops.end(), word) != ops.end()) return true;
     return false;
 }
 
 bool find_puncSign(const std::string& word){
-    if(std::find(punctSigns.begin(), punctSigns.end(), word) != punctSigns.end()){
+    if(std::find(punctSigns.begin(), punctSigns.end(), word) != punctSigns.end()) 
         return true;
-    }
     return false;
 }
 
 
 bool isID(const std::string& cur_word){
     std::regex pattern(R"([A-Za-z_]\w*)");
-    if(std::regex_match(cur_word, pattern)){
-        return true;
-    }
+    if(std::regex_match(cur_word, pattern)) return true;
     return false;
 }
 
 bool isNumber(const std::string& cur_word){
     std::regex pattern(R"(0|([1-9]+[0-9]*))");
-    if(std::regex_match(cur_word, pattern)){
-        return true;
-    }
+    if(std::regex_match(cur_word, pattern)) return true;
     return false;
 }
 
@@ -133,7 +107,6 @@ Token create_token(const std::string& cur_word, const std::string& orig_line,
     if(find_keyWord(cur_word) || find_type(cur_word) || find_op(cur_word)){
         TableNote tn{line_num, symb_num};
         Token t(cur_word, tn);
-//        symb_num += cur_word.length() + 1;
         return t;
     }
     if(find_puncSign(cur_word)){
@@ -151,25 +124,20 @@ Token create_token(const std::string& cur_word, const std::string& orig_line,
         }    
         TableNote tn{line_num, symb_num};
         Token t(cur_word, tn);
-/*         std::cout << "i'ma here\t" << cur_word << "\n"; */
-//        symb_num += cur_word.length() + 1;
         return t;
     }
 
     if(isID(cur_word)){
         TableNote tn{line_num, symb_num, "id", "", level_scope};
         Token t(cur_word, tn);
-//        symb_num += cur_word.length() + 1;
         return t;
     }
 
     if(isNumber(cur_word)){
         TableNote tn{line_num, symb_num, "number", "", level_scope};
         Token t(cur_word, tn);
-//        symb_num += cur_word.length() + 1;
         return t;
     }
-
     return Token("", {});
 }
 
@@ -177,24 +145,19 @@ void handle_line(const std::string& line, std::string& orig_line, std::vector<To
     if(!close_comment) return;
     std::string cur_word;
     int size = line.length();
-    for(auto x: line) std::cout << x << '\n';
-
     for(int i = 0; i < size; ++i){
-        if(line[i] == ' ' && cur_word.empty()) {/* symb_num++; */ continue;}
+        if(line[i] == ' ' && cur_word.empty()) continue;
         else if(line[i] == ' '){
             if(cur_word == "/*"){
                 if(close_comment) close_comment = false;
                 else close_comment = true;
                 continue;
             }
-            Token t = create_token(cur_word, orig_line, symb_num == 1 ? 0 : symb_num);
+            Token t = create_token(cur_word, orig_line, symb_num);
             tokens.push_back(t);
             cur_word.clear();
         }
-        else{
-            cur_word.push_back(line[i]);
-        }
+        else cur_word.push_back(line[i]);
     }
-    symb_num = 1; ++line_num;
-    
+    symb_num = 0; ++line_num; 
 }
