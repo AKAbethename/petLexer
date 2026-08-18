@@ -1,8 +1,8 @@
-#include "stdio.h"
-
 int main(){
     int k = 3;
     int l = k * 5;
+    int x = 0;
+    if(x >= 4) l = 4;
     return 0;
 }
 

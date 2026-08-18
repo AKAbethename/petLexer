@@ -14,9 +14,9 @@ std::vector<std::string> ops{"+", "-", "*", "/", "%", "&&", "||",
 
 std::vector<std::string> punctSigns = {"{", "}", "[", "]", "(", ")", ";", ",", "\"", "'"};                            
 
-static int line_num = 0;
+static int line_num = 1;
 
-static int symb_num = 0;
+static int symb_num = 1;
 
 static int close_single_quotes = 0;
 
@@ -39,7 +39,7 @@ void f(){
     std::cout << types[0] << "\n";
 }
 
-void split_line(std::string& line){
+std::string get_split_line(const std::string& line){
     std::string new_line;
     std::string symbs = "(){}[];,";
     int sz = line.length();
@@ -52,7 +52,16 @@ void split_line(std::string& line){
         else
             new_line.push_back(line[i]);
     }
-    line = new_line;
+    return new_line;
+
+}
+
+int find_cur_symb(std::string& line, char ch, int last_update){
+    int ans = -1;
+    for(int i = last_update; i < line.length(); ++i){
+        if(line[i] == ch) {ans = i; last_update = i+1;}
+    }
+    return ans;
 }
 
 void scan_code(const std::string& file_name){
@@ -61,8 +70,8 @@ void scan_code(const std::string& file_name){
     std::string line;
     while(std::getline(file, line)){
 //        std::cout << line << "\n";
-        split_line(line);
-        handle_line(line, token_stream);
+        std::string split_line = get_split_line(line);
+        handle_line(split_line, line, token_stream); // "line" for finding symb_num 
     }
 
     print_tokens(token_stream);
@@ -116,11 +125,15 @@ bool isNumber(const std::string& cur_word){
 }
 
 
-Token create_token(const std::string& cur_word){
+Token create_token(const std::string& cur_word, const std::string& orig_line, 
+                                                int last_symb_num){
+    for(int i = last_symb_num; i < orig_line.length(); ++i){
+        if(orig_line[i] == cur_word[0]) {symb_num = i+1; break;}
+    }
     if(find_keyWord(cur_word) || find_type(cur_word) || find_op(cur_word)){
         TableNote tn{line_num, symb_num};
         Token t(cur_word, tn);
-        symb_num += cur_word.length() + 1;
+//        symb_num += cur_word.length() + 1;
         return t;
     }
     if(find_puncSign(cur_word)){
@@ -139,43 +152,42 @@ Token create_token(const std::string& cur_word){
         TableNote tn{line_num, symb_num};
         Token t(cur_word, tn);
 /*         std::cout << "i'ma here\t" << cur_word << "\n"; */
-        symb_num += cur_word.length() + 1;
+//        symb_num += cur_word.length() + 1;
         return t;
     }
 
     if(isID(cur_word)){
         TableNote tn{line_num, symb_num, "id", "", level_scope};
         Token t(cur_word, tn);
-        symb_num += cur_word.length() + 1;
+//        symb_num += cur_word.length() + 1;
         return t;
     }
 
     if(isNumber(cur_word)){
         TableNote tn{line_num, symb_num, "number", "", level_scope};
         Token t(cur_word, tn);
-        symb_num += cur_word.length() + 1;
+//        symb_num += cur_word.length() + 1;
         return t;
     }
 
     return Token("", {});
 }
 
-void handle_line(const std::string& line, std::vector<Token>& tokens){
+void handle_line(const std::string& line, std::string& orig_line, std::vector<Token>& tokens){
     if(!close_comment) return;
     std::string cur_word;
-    char ch = '1';
     int size = line.length();
+    for(auto x: line) std::cout << x << '\n';
+
     for(int i = 0; i < size; ++i){
-        if(line[i] == ' ' && cur_word.empty()) continue;
-        if(line[i] == ' '){
-            // проверить, является ли это словом синтаксиса (ключевое, или знак)
-/*             std::cout << cur_word << " is cur_word\n"; */
+        if(line[i] == ' ' && cur_word.empty()) {/* symb_num++; */ continue;}
+        else if(line[i] == ' '){
             if(cur_word == "/*"){
                 if(close_comment) close_comment = false;
                 else close_comment = true;
                 continue;
             }
-            Token t = create_token(cur_word);
+            Token t = create_token(cur_word, orig_line, symb_num == 1 ? 0 : symb_num);
             tokens.push_back(t);
             cur_word.clear();
         }
@@ -183,5 +195,6 @@ void handle_line(const std::string& line, std::vector<Token>& tokens){
             cur_word.push_back(line[i]);
         }
     }
+    symb_num = 1; ++line_num;
     
 }

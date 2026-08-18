@@ -19,7 +19,7 @@ void f();
 
 void scan_code(const std::string& file_name );
 
-void handle_line(const std::string&, std::vector<Token>&);
+void handle_line(const std::string&, std::string&, std::vector<Token>&);
 
 Token create_token(const std::string& cur_word);
 
