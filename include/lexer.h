@@ -13,6 +13,8 @@ extern std::vector<std::string> ops;
 
 extern std::vector<std::string> punctSigns;
 
+extern std::vector<std::string> directives;
+
 class Token;
 
 void scan_code(const std::string& file_name);

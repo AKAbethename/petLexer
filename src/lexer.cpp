@@ -4,15 +4,17 @@
 #include <stack>
 #include <regex>
 
-std::vector<std::string> types{"int"};
+std::vector<std::string> types{"int", "double", "char"};
 
 std::vector<std::string> keyWords{"if", "else", "while", "break", "return", 
-                        "switch", "case", "default", "sizeof"};
+                        "switch", "case", "default", "sizeof", "const"};
 
 std::vector<std::string> ops{"+", "-", "*", "/", "%", "&&", "||",
-                            "=", "==", "!=", "<", "<=", ">", ">="};
+                            "=", "==", "!=", "<", "<=", ">", ">=", "+=", "-="};
 
 std::vector<std::string> punctSigns = {"{", "}", "[", "]", "(", ")", ";", ",", "\"", "'"};                            
+
+std::vector<std::string> directives = {"include", "define", "ifdef", "ifndef", "endif"};
 
 static int line_num = 1;
 
@@ -32,12 +34,14 @@ static bool close_square_bracket = true;
 
 static bool close_circle_bracket = true;
 
+static bool is_directive = false;
+
 static std::stack<std::string> brackets;
 
 
 std::string get_split_line(const std::string& line){
     std::string new_line;
-    std::string symbs = "(){}[];,";
+    std::string symbs = "(){}[];,#";
     int sz = line.length();
     for(int i = 0; i < sz; ++i){
         if(std::find(symbs.begin(), symbs.end(), line[i]) != symbs.end()){
@@ -85,6 +89,11 @@ bool find_puncSign(const std::string& word){
     return false;
 }
 
+bool isHashTag(const std::string& cur_word){
+    if(cur_word == "#") return true;
+    return false;
+}
+
 
 bool isID(const std::string& cur_word){
     std::regex pattern(R"([A-Za-z_]\w*)");
@@ -104,6 +113,7 @@ Token create_token(const std::string& cur_word, const std::string& orig_line,
     for(int i = last_symb_num; i < orig_line.length(); ++i){
         if(orig_line[i] == cur_word[0]) {symb_num = i+1; break;}
     }
+
     if(find_keyWord(cur_word) || find_type(cur_word) || find_op(cur_word)){
         TableNote tn{line_num, symb_num};
         Token t(cur_word, tn);
@@ -127,6 +137,14 @@ Token create_token(const std::string& cur_word, const std::string& orig_line,
         return t;
     }
 
+    if(is_directive){
+        // здесь можно сделать обработку ошибки (неверная директива)
+        TableNote tn{line_num, symb_num - 1, "#" + cur_word, "", level_scope};
+        Token t("#" + cur_word, tn);
+        is_directive = false;
+        return t;
+    }
+
     if(isID(cur_word)){
         TableNote tn{line_num, symb_num, "id", "", level_scope};
         Token t(cur_word, tn);
@@ -142,15 +160,25 @@ Token create_token(const std::string& cur_word, const std::string& orig_line,
 }
 
 void handle_line(const std::string& line, std::string& orig_line, std::vector<Token>& tokens){
+    std::cout << line << " is split_line\n\n";
     if(!close_comment) return;
     std::string cur_word;
     int size = line.length();
     for(int i = 0; i < size; ++i){
         if(line[i] == ' ' && cur_word.empty()) continue;
         else if(line[i] == ' '){
+            std::cout << cur_word << " is cur_word\n\n";
             if(cur_word == "/*"){
                 if(close_comment) close_comment = false;
                 else close_comment = true;
+                continue;
+            }
+            else if(cur_word == "//"){
+                break;
+            }
+            else if(cur_word == "#"){
+                is_directive = true;
+                cur_word.clear();
                 continue;
             }
             Token t = create_token(cur_word, orig_line, symb_num);
